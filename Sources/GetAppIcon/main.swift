@@ -48,11 +48,10 @@ func stringifyImage(image: NSImage) -> String? {
 
 command(
     Argument<Int>("pid", description: "pid of the Application"),
-    Option("w", default: 32, description: "Width of the output"),
-    Option("h", default: 32, description: "Height of the output")
-) { pid, w, h in
+    Option("size", default: 32, description: "Size of out the output")
+) { pid, size in
     if let icon = getIcon(pid: pid) {
-        if let result = stringifyImage(image: resizeIcon(image: icon, w: w, h: h)) {
+        if let result = stringifyImage(image: resizeIcon(image: icon, w: size, h: size)) {
             print(result)
         }
     }
