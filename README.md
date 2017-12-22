@@ -9,10 +9,10 @@ $ swift build -c release
 ```
 
 ```bash
-$ .build/debug/GetAppIcon --help
+$ .build/release/GetAppIcon --help
 Usage:
 
-    $ .build/debug/GetAppIcon <pid>
+    $ .build/release/GetAppIcon <pid>
 
 Arguments:
 
@@ -25,6 +25,6 @@ Options:
 ## Example
 
 ```bash
-$ .build/debug/GetAppIcon 814 --size 512
+$ .build/release/GetAppIcon 814 --size 512
 data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAA...
 ```
