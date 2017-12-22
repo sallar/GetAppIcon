@@ -51,6 +51,6 @@ command(
     Option("size", default: 32, description: "Size of out the output")
 ) { pid, size in
     if let icon = getIcon(pid: pid), let result = stringifyImage(image: resizeIcon(image: icon, w: size, h: size)) {
-            print(result)
+        print(result)
     }
 }.run()
