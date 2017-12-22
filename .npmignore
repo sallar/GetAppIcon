@@ -1,7 +1,0 @@
-.DS_Store
-.build/debug/ModuleCache
-.build/debug/GetAppIcon.*
-Sources
-*swift
-build.db
-debug.yaml
