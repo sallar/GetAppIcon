@@ -1,11 +1,24 @@
 import Quartz
 import Commander
 
-let stderr = FileHandle.standardError
-let stdout = FileHandle.standardOutput
+struct CLI {
+    final class StandardErrorTextStream: TextOutputStream {
+        func write(_ string: String) {
+            FileHandle.standardError.write(string.data(using: .utf8)!)
+        }
+    }
+
+    static let stdout = FileHandle.standardOutput
+    static let stderr = FileHandle.standardError
+
+    private static var _stderr = StandardErrorTextStream()
+    static func printErr<T>(_ item: T) {
+        Swift.print(item, to: &_stderr)
+    }
+}
 
 extension NSBitmapImageRep {
-    var png: Data? {
+    func png() -> Data? {
         return representation(using: .png, properties: [:])
     }
 }
@@ -17,54 +30,50 @@ extension Data {
 }
 
 extension NSImage {
-    var png: Data? {
-        return tiffRepresentation?.bitmap?.png
+    func png() -> Data? {
+        return tiffRepresentation?.bitmap?.png()
+    }
+
+    func resized(to size: Int) -> NSImage {
+        let newSize = CGSize(width: size, height: size)
+
+        let image = NSImage(size: newSize)
+        image.lockFocus()
+        NSGraphicsContext.current?.imageInterpolation = .high
+
+        draw(
+            in: CGRect(origin: .zero, size: newSize),
+            from: .zero,
+            operation: .copy,
+            fraction: 1
+        )
+
+        image.unlockFocus()
+        return image
     }
 }
 
-func resizeImage(image: NSImage?, w: Int, h: Int) -> NSImage? {
-    guard let sourceImage = image else {
-        return nil
-    }
-    let destSize = NSMakeSize(CGFloat(w), CGFloat(h))
-    let newImage = NSImage(size: destSize)
-    newImage.lockFocus()
-    sourceImage.draw(
-        in: NSMakeRect(0, 0, destSize.width, destSize.height),
-        from: NSMakeRect(0, 0, sourceImage.size.width, sourceImage.size.height),
-        operation: .sourceOver,
-        fraction: CGFloat(1)
-    )
-    newImage.unlockFocus()
-    newImage.size = destSize
-    return NSImage(data: newImage.tiffRepresentation!)!
-}
-
-func getIcon(pid: Int, size: Int) -> NSImage? {
-    let runningApp = NSRunningApplication(processIdentifier: pid_t(pid))
-    return resizeImage(image: runningApp?.icon, w: size, h: size)
+func getIcon(pid: Int, size: Int) -> Data? {
+    return NSRunningApplication(processIdentifier: pid_t(pid))?.icon?.resized(to: size).png()
 }
 
 func stringify(data: Data) -> String {
     return "data:image/png;base64,\(data.base64EncodedString())"
 }
 
-func printErr(_ item: String) {
-    stderr.write("\(item)\n".data(using: String.Encoding.utf8)!)
-    exit(1)
-}
-
 command(
-    Argument<Int>("pid", description: "pid of the Application"),
-    Option("size", default: 32, description: "Size of out the output"),
-    Option("encoding", default: "base64", description: "Encoding of output")
+    Argument<Int>("pid", description: "PID of the app"),
+    Option("size", default: 32, description: "Size of the output icon"),
+    Option("encoding", default: "base64", description: "Encoding of output icon")
 ) { pid, size, encoding in
     guard let icon = getIcon(pid: pid, size: size) else {
-        return printErr("App with provided pid has not been found.")
+		CLI.printErr("Could not find app with PID \(pid)")
+		exit(1)
     }
+
     if encoding == "buffer" {
-        stdout.write(icon.png!)
+        CLI.stdout.write(icon)
     } else {
-        print(stringify(data: icon.png!))
+        print(stringify(data: icon))
     }
 }.run()
